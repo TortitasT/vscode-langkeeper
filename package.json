@@ -14,8 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "vscode-langkeeper.helloWorld",
-        "title": "Hello World"
+        "command": "vscode-langkeeper.openConfig",
+        "title": "Configure langkeeper"
       }
     ]
   },
