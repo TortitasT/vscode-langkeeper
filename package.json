@@ -2,6 +2,11 @@
   "name": "vscode-langkeeper",
   "displayName": "vscode-langkeeper",
   "description": "Keep track of the time you spend on each language",
+  "publisher": "tortitas",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TortitasT/vscode-langkeeper.git"
+  },
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.81.0"
@@ -31,6 +36,7 @@
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "20.2.5",
+    "@types/node-fetch": "^2.6.4",
     "@types/vscode": "^1.81.0",
     "@typescript-eslint/eslint-plugin": "^5.59.8",
     "@typescript-eslint/parser": "^5.59.8",
