@@ -42,7 +42,6 @@ export function activate(context: vscode.ExtensionContext) {
       );
 
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
       const response = await fetch(`${address}/users/login`, {
         method: "POST",
         headers: {
@@ -80,6 +79,7 @@ export function activate(context: vscode.ExtensionContext) {
     const address = await context.secrets.get("address");
     const extension = document.fileName.split(".").pop();
 
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
     const response = await fetch(`${address}/languages/ping`, {
       method: "POST",
       headers: {
