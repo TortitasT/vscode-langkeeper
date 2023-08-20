@@ -11,46 +11,50 @@ export function activate(context: vscode.ExtensionContext) {
     async () => {
       const secrets = context.secrets;
 
-      let address: any = await secrets.get("address");
+      let address: any =
+        (await secrets.get("address")) || "https://langkeeper.tortitas.eu";
       let email: any = await secrets.get("email");
       let password: any = await secrets.get("password");
 
       address = await vscode.window.showInputBox({
         placeHolder: "Enter server address",
         prompt: "Set server address",
-        value: address
+        value: address,
       });
 
       email = await vscode.window.showInputBox({
         placeHolder: "Enter your email",
         prompt: "Login into your account",
-        value: email
+        value: email,
       });
 
       password = await vscode.window.showInputBox({
         placeHolder: "Enter your password",
         prompt: "Login into your account",
-        value: password
+        value: password,
       });
+
+      if (!address || !email || !password) {
+        vscode.window.showErrorMessage("Login failed, please fill all fields");
+        return;
+      }
 
       await secrets.store("address", address);
       await secrets.store("email", email);
       await secrets.store("password", password);
 
-      vscode.window.showInformationMessage(
-        "Trying to login..."
-      );
+      vscode.window.showInformationMessage("Trying to login...");
 
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
       const response = await fetch(`${address}/users/login`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email,
-          password
-        })
+          password,
+        }),
       });
 
       const cookie = response.headers.get("set-cookie");
@@ -58,45 +62,42 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (token) {
         await secrets.store("token", token);
-        vscode.window.showInformationMessage(
-          "Login successful"
-        );
-      }
-      else {
-        vscode.window.showErrorMessage(
-          "Login failed"
-        );
+        vscode.window.showInformationMessage("Login successful");
+      } else {
+        vscode.window.showErrorMessage("Login failed");
       }
     }
   );
 
-  let onSave = vscode.workspace.onDidSaveTextDocument(async (document: vscode.TextDocument) => {
-    const token = await context.secrets.get("token");
-    if (!token) {
-      return;
+  let onSave = vscode.workspace.onDidSaveTextDocument(
+    async (document: vscode.TextDocument) => {
+      const token = await context.secrets.get("token");
+      if (!token) {
+        return;
+      }
+
+      const address = await context.secrets.get("address");
+      const extension = document.fileName.split(".").pop();
+
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+      const response = await fetch(`${address}/languages/ping`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `id=${token}`,
+        },
+        body: JSON.stringify({
+          extension,
+        }),
+      });
+
+      if (response.status !== 200) {
+        vscode.window.showErrorMessage(
+          "Langkeeper: Error " + (await response.text())
+        );
+      }
     }
-
-    const address = await context.secrets.get("address");
-    const extension = document.fileName.split(".").pop();
-
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-    const response = await fetch(`${address}/languages/ping`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Cookie": `id=${token}`
-      },
-      body: JSON.stringify({
-        extension,
-      }),
-    });
-
-    if (response.status !== 200) {
-      vscode.window.showErrorMessage(
-        "Langkeeper: Error " + await response.text()
-      );
-    }
-  });
+  );
 
   context.subscriptions.push(onStart, onSave);
 }
