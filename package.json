@@ -3,6 +3,15 @@
   "displayName": "vscode-langkeeper",
   "description": "Keep track of the time you spend on each language",
   "publisher": "tortitas",
+  "keywords": [
+    "langkeeper",
+    "language",
+    "time",
+    "tracker",
+    "time tracker",
+    "time tracking"
+  ],
+  "icon": "logo.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/TortitasT/vscode-langkeeper.git"
