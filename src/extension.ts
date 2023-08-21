@@ -6,7 +6,45 @@ import fetch from "node-fetch";
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  let onStart = vscode.commands.registerCommand(
+  async function ping(document: vscode.TextDocument) {
+    const token = await context.secrets.get("token");
+    if (!token) {
+      return;
+    }
+
+    const address = await context.secrets.get("address");
+    const extension = document.fileName.split(".").pop();
+
+    if (!address) {
+      vscode.window.showErrorMessage("Langkeeper: Server address not set");
+      return;
+    }
+
+    if (!extension) {
+      vscode.window.showErrorMessage("Langkeeper: File extension not found");
+      return;
+    }
+
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    const response = await fetch(`${address}/languages/ping`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: `id=${token}`,
+      },
+      body: JSON.stringify({
+        extension,
+      }),
+    });
+
+    if (response.status !== 200 && response.status !== 204) {
+      vscode.window.showErrorMessage(
+        "Langkeeper: Error " + (await response.text())
+      );
+    }
+  }
+
+  const onSetup = vscode.commands.registerCommand(
     "vscode-langkeeper.openConfig",
     async () => {
       const secrets = context.secrets;
@@ -69,38 +107,17 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  let onSave = vscode.workspace.onDidSaveTextDocument(
-    async (document: vscode.TextDocument) => {
-      const token = await context.secrets.get("token");
-      if (!token) {
-        return;
-      }
+  const onSave = vscode.workspace.onDidSaveTextDocument(ping);
 
-      const address = await context.secrets.get("address");
-      const extension = document.fileName.split(".").pop();
-
-      process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-      const response = await fetch(`${address}/languages/ping`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `id=${token}`,
-        },
-        body: JSON.stringify({
-          extension,
-        }),
-      });
-
-      if (response.status !== 200) {
-        vscode.window.showErrorMessage(
-          "Langkeeper: Error " + (await response.text())
-        );
-      }
+  setInterval(() => {
+    const document = vscode.window.activeTextEditor?.document;
+    if (document) {
+      ping(document);
     }
-  );
+  }, 5000);
 
-  context.subscriptions.push(onStart, onSave);
+  context.subscriptions.push(onSetup, onSave);
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() { }
+export function deactivate() {}
